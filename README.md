@@ -1,4 +1,4 @@
-# WYSIWYG EZBlock Editor v0.1.0
+# WYSIWYG EZ Block Editor v0.1.0
 
 ### NOTE: Project is in **VERY EARLY STAGE** and still in development and may contain bugs or incomplete features.
 
