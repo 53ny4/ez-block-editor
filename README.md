@@ -33,6 +33,16 @@ The editor provides options for uploading images or linking from URLs, inserting
 - **Text Styling Options**: Apply bold, italic, underline, and strikethrough formatting.
 - **Drag-and-Drop**: Organize blocks by dragging them to your desired order.
 
+## Installation
+
+### Note: Currently all dependencies are imported from CDNs, so no need to install any packages.
+
+1. Clone the repository - `git clone https://github.com/53ny4/ez-block-editor.git`
+2. Run a local server (e.g., `php -S localhost:8000`)
+3. Open `index.html` in your browser
+4. Done!
+
+---
 
 ## ToDo
  - [ ] Add more block types
