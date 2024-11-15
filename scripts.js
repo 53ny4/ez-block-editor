@@ -232,6 +232,22 @@ $(document).ready(function () {
     insertBlock('header', null);
 });
 
+// Handle Enter and Shift+Enter in content-editable areas
+$(document).on('keydown', '.content-editable', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Prevent the default Enter key action
+
+        if (e.shiftKey) {
+            // If Shift+Enter is pressed, insert a line break (<br>)
+            document.execCommand('insertHTML', false, '<br><br>');
+        } else {
+            // If Enter is pressed without Shift, create a new paragraph block
+            const currentBlock = $(this).closest('.editor-block');
+            insertBlock('paragraph', currentBlock);
+        }
+    }
+});
+
 // Outside Click Handler
 // ---------------------
 $(document).on('click', function (event) {
@@ -239,6 +255,8 @@ $(document).on('click', function (event) {
     if (!isClickInside) {
         $('#blockTypeMenu').hide();
     }
+
+
 });
 
 // Block Type Menu Display Function
@@ -267,20 +285,22 @@ function createBlock() {
             <i class="fas fa-ellipsis-v"></i>
           </button>
           <div class="dropdown-menu dropdown-menu-right">
-            <a class="dropdown-item move-up" href="#">Move Up</a>
-            <a class="dropdown-item move-down" href="#">Move Down</a>
+            <a class="dropdown-item move-up" href="#"> <i class="fa fa-arrow-up"></i> Move Up</a>
+            <a class="dropdown-item move-down" href="#"><i class="fa fa-arrow-down"></i> Move Down</a>
             <div class="dropdown-divider"></div>
-            <a class="dropdown-item text-danger delete-block" data-toggle="dropdown" style="cursor: pointer;">Delete</a>
+            <a class="dropdown-item text-danger delete-block" data-toggle="dropdown" style="cursor: pointer;"><i class="fa fa-trash"></i> Delete</a>
           </div>
         </div>
       `);
     block.append(optionsButton);
+
 
     let dragHandle = $('<div>', {class: 'drag-handle'}).html('<i class="fas fa-bars"></i>');
     block.append(dragHandle);
 
     return block;
 }
+
 
 function insertBlock(type, afterBlock) {
     let block = createBlock();
@@ -302,9 +322,151 @@ function insertBlock(type, afterBlock) {
             });
             break;
         case 'image':
-            $('#imageUploadModal').modal('show');
-            $('#imageUploadModal').data('afterBlock', afterBlock);
-            return;
+            // Create input for image URL
+            const urlInput = $('<input>', {
+                type: 'text',
+                class: 'image-input form-control col-md-6',
+                placeholder: 'Enter image URL or drag an image here'
+            });
+
+            // Create file input for local file selection
+            const fileInput = $('<input>', {
+                type: 'file',
+                class: 'file-input form-control col-md-6',
+                accept: 'image/*',
+                style: 'margin-top: 10px;'
+            });
+
+            // Error message container
+            const imageErrorMessage = $('<div>', {
+                class: 'error-message',
+                text: 'Invalid image or file upload. Please try again.',
+                style: 'display: none; color: red; font-size: 12px;'
+            });
+
+            // Create progress bar
+            const progressBar = $('<div>', {
+                class: 'progress',
+                style: 'display: none; margin-top: 10px;'
+            }).append($('<div>', {
+                class: 'progress-bar',
+                role: 'progressbar',
+                style: 'width: 0%;',
+                'aria-valuenow': '0',
+                'aria-valuemin': '0',
+                'aria-valuemax': '100'
+            }));
+
+            // Handle URL input change
+            urlInput.on('change', function () {
+                const imageUrl = $(this).val();
+                urlInput.css('border-color', '');
+                imageErrorMessage.hide();
+
+                const img = new Image();
+                img.onload = function () {
+                    const imgTag = $('<img>', {
+                        src: imageUrl,
+                        class: 'img-fluid',
+                        alt: 'Uploaded Image'
+                    });
+                    urlInput.replaceWith(imgTag);
+                    fileInput.hide(); // Hide file input when URL is used
+                };
+                img.onerror = function () {
+                    urlInput.css('border-color', 'red');
+                    imageErrorMessage.show();
+                };
+                img.src = imageUrl;
+            });
+
+            // Handle local file selection
+            fileInput.on('change', function () {
+                const file = this.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const formData = new FormData();
+                    formData.append('imageFile', file);
+
+                    // Show progress bar
+                    progressBar.show();
+                    const progressBarInner = progressBar.find('.progress-bar');
+                    progressBarInner.css('width', '0%').attr('aria-valuenow', 0);
+
+                    $.ajax({
+                        url: 'upload.php',
+                        type: 'POST',
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        dataType: 'json',
+                        xhr: function () {
+                            const xhr = new window.XMLHttpRequest();
+                            xhr.upload.addEventListener('progress', function (evt) {
+                                if (evt.lengthComputable) {
+                                    const percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                                    progressBarInner.css('width', percentComplete + '%').attr('aria-valuenow', percentComplete);
+                                }
+                            }, false);
+                            return xhr;
+                        },
+                        success: function (response) {
+                            progressBar.hide();
+                            if (response.status === 'success') {
+                                const imgTag = $('<img>', {
+                                    src: response.url,
+                                    class: 'img-fluid',
+                                    alt: 'Uploaded Image'
+                                });
+                                fileInput.replaceWith(imgTag);
+                                urlInput.hide(); // Hide URL input when file is used
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function () {
+                            progressBar.hide();
+                            alert('Image upload failed.');
+                        }
+                    });
+                } else {
+                    imageErrorMessage.show();
+                }
+            });
+
+            // Drag-and-drop functionality
+            block.on('dragover', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragging');
+            });
+
+            block.on('dragleave', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragging');
+            });
+
+            block.on('drop', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput[0].files = files;
+                    fileInput.trigger('change');
+                }
+            });
+
+            // Append all elements to the block
+            block.append(urlInput)
+                .append(fileInput)
+                .append(imageErrorMessage)
+                .append(progressBar);
+            break;
+
+
+
+
+
         case 'link':
             contentArea = $('<input>', {
                 type: 'text',
@@ -422,23 +584,6 @@ function insertBlock(type, afterBlock) {
     contentArea.focus();
     checkEditorEmpty();
 }
-
-
-// Handle Enter and Shift+Enter in content-editable areas
-$(document).on('keydown', '.content-editable', function (e) {
-    if (e.key === 'Enter') {
-        e.preventDefault(); // Prevent the default Enter key action
-
-        if (e.shiftKey) {
-            // If Shift+Enter is pressed, insert a line break (<br>)
-            document.execCommand('insertHTML', false, '<br><br>');
-        } else {
-            // If Enter is pressed without Shift, create a new paragraph block
-            const currentBlock = $(this).closest('.editor-block');
-            insertBlock('paragraph', currentBlock);
-        }
-    }
-});
 
 
 function insertImageBlock(src, afterBlock) {
