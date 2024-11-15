@@ -28,6 +28,7 @@ The editor provides options for uploading images or linking from URLs, inserting
 
 - **Add Different Block Types**: Easily add headers, paragraphs, images, links, and embedded content.
 - **Image Upload & URL Insertion**: Choose to upload an image or insert it via a URL.
+- **Resizable Images**: Resize images by dragging the corner.
 - **Responsive Link & Embed Blocks**: Preview links and embedded content dynamically based on Open Graph metadata.
 - **Text Styling Options**: Apply bold, italic, underline, and strikethrough formatting.
 - **Drag-and-Drop**: Organize blocks by dragging them to your desired order.
