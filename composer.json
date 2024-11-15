@@ -1,7 +1,7 @@
 {
     "name": "53ny4/ez-block-editor",
     "description": "WYSIWYG block editor",
-    "version": "0.2.0",
+    "version": "0.2.5",
     "keywords": ["wysiwyg", "editor", "block"],
     "type": "library",
     "license": "MIT",
