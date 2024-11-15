@@ -424,6 +424,23 @@ function insertBlock(type, afterBlock) {
 }
 
 
+// Handle Enter and Shift+Enter in content-editable areas
+$(document).on('keydown', '.content-editable', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Prevent the default Enter key action
+
+        if (e.shiftKey) {
+            // If Shift+Enter is pressed, insert a line break (<br>)
+            document.execCommand('insertHTML', false, '<br><br>');
+        } else {
+            // If Enter is pressed without Shift, create a new paragraph block
+            const currentBlock = $(this).closest('.editor-block');
+            insertBlock('paragraph', currentBlock);
+        }
+    }
+});
+
+
 function insertImageBlock(src, afterBlock) {
     let block = createBlock();
     let img = $('<img>', {src: src, class: 'img-fluid'});
